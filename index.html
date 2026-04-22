@@ -4,515 +4,166 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Mess Management App</title>
-
-  <!-- html5-qrcode for camera scanning -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
   <style>
-    /* ── Reset & Base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --blue:        #3B5BDB;
-      --blue-light:  #EEF2FF;
-      --blue-mid:    #748FFC;
-      --green:       #2F9E44;
-      --green-dark:  #1B4332;
-      --green-bg:    #0D2B1A;
-      --red-light:   #FFF5F5;
-      --red-border:  #FFCDD2;
-      --red-icon:    #E53935;
-      --gray-1:      #F8F9FA;
-      --gray-2:      #E9ECEF;
-      --gray-3:      #ADB5BD;
-      --gray-4:      #6C757D;
-      --gray-5:      #343A40;
-      --text:        #1C1C1E;
-      --bg:          #F8F9FA;
-      --card-bg:     #FFFFFF;
-      --radius:      16px;
-      --font:        'DM Sans', sans-serif;
-      --font-mono:   'DM Mono', monospace;
-      --shadow:      0 2px 16px rgba(0,0,0,0.08);
-      --transition:  0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      --blue:       #3B5BDB;
+      --blue-light: #EEF2FF;
+      --green-bg:   #0D2B1A;
+      --red-light:  #FFF5F5;
+      --red-border: #FFCDD2;
+      --red-icon:   #E53935;
+      --gray-2:     #E9ECEF;
+      --gray-3:     #ADB5BD;
+      --gray-4:     #6C757D;
+      --gray-5:     #343A40;
+      --text:       #1C1C1E;
+      --bg:         #F8F9FA;
+      --card-bg:    #FFFFFF;
+      --radius:     16px;
+      --font:       'DM Sans', sans-serif;
+      --font-mono:  'DM Mono', monospace;
+      --shadow:     0 2px 16px rgba(0,0,0,0.08);
+      --transition: 0.35s cubic-bezier(0.4,0,0.2,1);
     }
+    html, body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100%; overflow: hidden; }
 
-    html, body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      height: 100%;
-      overflow: hidden;
-    }
+    /* ── App wrapper ── */
+    #app { position: relative; width: 100%; max-width: 430px; height: 100dvh; margin: 0 auto; overflow: hidden; background: var(--bg); }
 
-    /* ── Screen Container ── */
-    #app {
-      position: relative;
-      width: 100%;
-      max-width: 430px;
-      height: 100dvh;
-      margin: 0 auto;
-      overflow: hidden;
-      background: var(--bg);
-    }
+    /* ── Screens ── */
+    .screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; opacity: 0; pointer-events: none; transform: translateX(30px); transition: opacity var(--transition), transform var(--transition); }
+    .screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
 
-    .screen {
-      position: absolute;
-      inset: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(30px);
-      transition: opacity var(--transition), transform var(--transition);
-    }
-    .screen.active {
-      opacity: 1;
-      pointer-events: all;
-      transform: translateX(0);
-    }
-    .screen.exit-left {
-      opacity: 0;
-      transform: translateX(-30px);
-    }
+    /* ─── HOME SCREEN ─── */
+    #home-screen { padding: 0 0 80px; }
 
-    /* ─────────────────────────────── HOME SCREEN ─────────────────────────────── */
-    #home-screen {
-      padding: 0 0 80px;
-      background: var(--bg);
-    }
-
-    /* Top Bar */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 56px 20px 12px;
-    }
-    .avatar {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--gray-2);
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 56px 20px 12px; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--gray-2); display: flex; align-items: center; justify-content: center; }
     .avatar svg { width: 28px; height: 28px; fill: var(--gray-3); }
-
-    .brand-logo {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      border: 2px solid var(--gray-2);
-      display: flex; align-items: center; justify-content: center;
-      background: white;
-      box-shadow: var(--shadow);
-    }
-    .brand-logo img { width: 28px; height: 28px; object-fit: contain; }
-    /* fallback leaf emoji if img fails */
+    .brand-logo { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--gray-2); display: flex; align-items: center; justify-content: center; background: white; box-shadow: var(--shadow); }
     .brand-logo span { font-size: 18px; }
 
-    /* Greeting */
-    .greeting {
-      padding: 4px 20px 20px;
-    }
-    .greeting h1 {
-      font-size: 26px;
-      font-weight: 700;
-      line-height: 1.2;
-      color: var(--text);
-    }
+    .greeting { padding: 4px 20px 20px; }
+    .greeting h1 { font-size: 26px; font-weight: 700; line-height: 1.2; }
     .greeting h1 span { color: var(--blue); }
-    .greeting p {
-      margin-top: 4px;
-      font-size: 14px;
-      color: var(--gray-4);
-    }
+    .greeting p { margin-top: 4px; font-size: 14px; color: var(--gray-4); }
 
-    /* Cards */
-    .card {
-      margin: 0 16px 12px;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    /* Alerts card */
-    .alert-card {
-      border: 1.5px solid var(--red-border);
-      background: var(--red-light);
-    }
-    .card-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 14px 16px 10px;
-    }
-    .icon-circle {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .icon-circle.red   { background: #FFEBEE; }
-    .icon-circle.blue  { background: var(--blue-light); }
-    .card-header .label {
-      font-size: 15px; font-weight: 600;
-      color: var(--red-icon);
-    }
+    .card { margin: 0 16px 12px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .alert-card { border: 1.5px solid var(--red-border); background: var(--red-light); }
+    .card-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+    .icon-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .icon-circle.red  { background: #FFEBEE; }
+    .icon-circle.blue { background: var(--blue-light); }
+    .card-header .label { font-size: 15px; font-weight: 600; color: var(--red-icon); }
     .card-header .label.blue { color: var(--blue); }
-    .card-body {
-      padding: 0 16px 14px;
-      font-size: 14px; color: var(--gray-4);
-      text-align: center;
-    }
-
-    /* Notif card */
     .notif-card .card-header .label { color: var(--gray-5); }
+    .card-body { padding: 0 16px 14px; font-size: 14px; color: var(--gray-4); text-align: center; }
 
-    /* Quick Actions */
-    .section-title {
-      font-size: 13px; font-weight: 600;
-      color: var(--gray-4);
-      padding: 4px 20px 12px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .actions-row {
-      display: flex;
-      justify-content: space-around;
-      padding: 0 12px 4px;
-    }
-    .action-btn {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 8px;
-      cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 12px;
-      border: none; background: none;
-      transition: background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .actions-row { display: flex; justify-content: space-around; padding: 0 12px 4px; }
+    .action-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; border-radius: 12px; border: none; background: none; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
     .action-btn:active { background: var(--gray-2); }
-    .action-icon {
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      background: var(--blue);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 12px rgba(59,91,219,0.35);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .action-btn:active .action-icon {
-      transform: scale(0.92);
-      box-shadow: 0 2px 6px rgba(59,91,219,0.25);
-    }
+    .action-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59,91,219,0.35); transition: transform 0.15s, box-shadow 0.15s; }
+    .action-btn:active .action-icon { transform: scale(0.92); box-shadow: 0 2px 6px rgba(59,91,219,0.25); }
     .action-icon svg { width: 26px; height: 26px; fill: white; }
-    .action-label {
-      font-size: 12px; font-weight: 600;
-      color: var(--gray-5);
-      text-align: center;
-      line-height: 1.3;
-    }
+    .action-label { font-size: 12px; font-weight: 600; color: var(--gray-5); text-align: center; line-height: 1.3; }
 
-    /* Mess Today */
-    .mess-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 20px 10px;
-    }
+    .mess-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 10px; }
     .mess-header h2 { font-size: 17px; font-weight: 700; }
-    .mess-header a {
-      font-size: 14px; font-weight: 600;
-      color: var(--blue); text-decoration: none;
-    }
+    .mess-header a { font-size: 14px; font-weight: 600; color: var(--blue); text-decoration: none; }
 
-    .meal-card {
-      margin: 0 16px 12px;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
-    .meal-title-row {
-      display: flex; align-items: baseline; justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .meal-name {
-      font-size: 18px; font-weight: 700;
-    }
-    .meal-badge {
-      font-size: 13px; font-weight: 600;
-      color: #2F9E44;
-      margin-left: 10px;
-    }
-    .meal-time {
-      font-size: 13px; color: var(--gray-4);
-      font-family: var(--font-mono);
-    }
-    .dish-label {
-      font-size: 11px; font-weight: 600;
-      color: var(--gray-3);
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-    .dish-item {
-      font-size: 14px; font-weight: 500;
-      color: var(--gray-5);
-      padding: 3px 0;
-    }
+    .meal-card { margin: 0 16px 12px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+    .meal-title-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+    .meal-name { font-size: 18px; font-weight: 700; }
+    .meal-badge { font-size: 13px; font-weight: 600; color: #2F9E44; margin-left: 10px; }
+    .meal-time { font-size: 13px; color: var(--gray-4); font-family: var(--font-mono); }
+    .dish-label { font-size: 11px; font-weight: 600; color: var(--gray-3); letter-spacing: 1px; margin-bottom: 8px; }
+    .dish-item { font-size: 14px; font-weight: 500; color: var(--gray-5); padding: 3px 0; }
 
-    /* Bottom Nav */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 100%; max-width: 430px;
-      background: white;
-      border-top: 1px solid var(--gray-2);
-      display: flex;
-      z-index: 100;
-    }
-    .nav-item {
-      flex: 1;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 3px;
-      padding: 10px 0 14px;
-      cursor: pointer;
-      border: none; background: none;
-      -webkit-tap-highlight-color: transparent;
-    }
+    /* ── Bottom Nav ── */
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1px solid var(--gray-2); display: flex; z-index: 100; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 14px; cursor: pointer; border: none; background: none; -webkit-tap-highlight-color: transparent; }
     .nav-item svg { width: 22px; height: 22px; }
     .nav-item span { font-size: 11px; font-weight: 600; color: var(--gray-4); }
-    .nav-item.active svg { fill: var(--blue); }
     .nav-item.active span { color: var(--blue); }
-    .nav-item:not(.active) svg { fill: var(--gray-4); }
+    /* SVG fill/stroke for active state handled via class */
+    .nav-item svg.fill-icon { fill: var(--gray-4); }
+    .nav-item.active svg.fill-icon { fill: var(--blue); }
+    .nav-item svg.stroke-icon { fill: none; stroke: var(--gray-4); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-item.active svg.stroke-icon { stroke: var(--blue); }
 
-    /* ─────────────────────────────── SCANNER SCREEN ─────────────────────────────── */
-    #scanner-screen {
-      background: #0A0A0A;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      padding: 0;
-    }
+    /* ─── GALA DINNER SCREEN ─── */
+    #gala-screen { padding: 0 0 80px; background: var(--bg); }
 
-    .scanner-header {
-      width: 100%;
-      display: flex; align-items: center; gap: 12px;
-      padding: 56px 20px 20px;
+    .gala-header { padding: 56px 20px 20px; }
+    .gala-header h1 { font-size: 32px; font-weight: 800; color: var(--text); }
+
+    .gala-categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 16px 24px; }
+
+    .gala-cat-btn {
+      background: white; border: 1.5px solid var(--gray-2); border-radius: 14px;
+      padding: 20px 8px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
     }
-    .back-btn {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .gala-cat-btn:active { transform: scale(0.94); border-color: var(--blue); box-shadow: none; }
+
+    .gala-cat-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--gray-2); display: flex; align-items: center; justify-content: center; }
+    .gala-cat-icon svg { width: 24px; height: 24px; fill: none; stroke: var(--gray-4); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .gala-cat-label { font-size: 13px; font-weight: 600; color: var(--gray-4); text-align: center; line-height: 1.3; }
+
+    .gala-info-box { margin: 0 16px; background: var(--gray-2); border-radius: 14px; padding: 22px 16px; text-align: center; font-size: 15px; color: var(--gray-4); }
+
+    /* ─── SCANNER SCREEN ─── */
+    #scanner-screen { background: #0A0A0A; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; }
+    .scanner-header { width: 100%; display: flex; align-items: center; gap: 12px; padding: 56px 20px 20px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.12); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
     .back-btn svg { width: 20px; height: 20px; fill: white; }
-    .scanner-title {
-      font-size: 18px; font-weight: 700;
-      color: white;
-    }
-
-    #qr-reader {
-      width: 100%;
-      max-width: 430px;
-    }
-    /* override html5-qrcode default styles */
+    .scanner-title { font-size: 18px; font-weight: 700; color: white; }
+    #qr-reader { width: 100%; max-width: 430px; }
     #qr-reader video { border-radius: 0 !important; }
     #qr-reader__scan_region { border: none !important; }
     #qr-reader__dashboard { background: #0A0A0A !important; color: white !important; }
-    #qr-reader__dashboard button {
-      background: var(--blue) !important;
-      color: white !important;
-      border-radius: 8px !important;
-      border: none !important;
-      padding: 8px 20px !important;
-      font-family: var(--font) !important;
-      font-weight: 600 !important;
-    }
-
-    .scanner-overlay-text {
-      color: rgba(255,255,255,0.6);
-      font-size: 14px;
-      text-align: center;
-      padding: 20px;
-      line-height: 1.6;
-    }
-
-    .scan-frame {
-      position: relative;
-      width: 260px; height: 260px;
-      margin: 20px auto;
-    }
-    .scan-frame::before, .scan-frame::after,
-    .scan-frame span::before, .scan-frame span::after {
-      content: '';
-      position: absolute;
-      width: 40px; height: 40px;
-      border-color: var(--blue);
-      border-style: solid;
-    }
+    #qr-reader__dashboard button { background: var(--blue) !important; color: white !important; border-radius: 8px !important; border: none !important; padding: 8px 20px !important; font-family: var(--font) !important; font-weight: 600 !important; }
+    .scanner-overlay-text { color: rgba(255,255,255,0.6); font-size: 14px; text-align: center; padding: 20px; line-height: 1.6; }
+    .scan-frame { position: relative; width: 260px; height: 260px; margin: 20px auto; }
+    .scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after { content: ''; position: absolute; width: 40px; height: 40px; border-color: var(--blue); border-style: solid; }
     .scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
     .scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
     .scan-frame span::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
     .scan-frame span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    .camera-placeholder { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; gap: 16px; }
+    .camera-placeholder p { color: rgba(255,255,255,0.5); font-size: 14px; text-align: center; line-height: 1.6; }
+    .scan-demo-btn { background: var(--blue); color: white; border: none; border-radius: 12px; padding: 14px 32px; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; margin-top: 8px; transition: opacity 0.15s; }
+    .scan-demo-btn:active { opacity: 0.85; }
 
-    .camera-placeholder {
-      width: 100%;
-      display: flex; flex-direction: column;
-      align-items: center; padding: 30px 20px;
-      gap: 16px;
-    }
-    .camera-placeholder p {
-      color: rgba(255,255,255,0.5);
-      font-size: 14px; text-align: center;
-      line-height: 1.6;
-    }
-    .camera-placeholder .scan-demo-btn {
-      background: var(--blue);
-      color: white;
-      border: none; border-radius: 12px;
-      padding: 14px 32px;
-      font-size: 15px; font-weight: 600;
-      font-family: var(--font);
-      cursor: pointer;
-      margin-top: 8px;
-      transition: opacity 0.15s;
-    }
-    .camera-placeholder .scan-demo-btn:active { opacity: 0.85; }
-
-    /* ─────────────────────────────── RESULT SCREEN ─────────────────────────────── */
-    #result-screen {
-      background: #000;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      min-height: 100dvh;
-      padding: 40px 24px 40px;
-      gap: 0;
-    }
-
-    .result-check {
-      width: 88px; height: 88px;
-      border-radius: 50%;
-      background: var(--green-bg);
-      border: 2px solid rgba(47,158,68,0.3);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 20px;
-      animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-    @keyframes pop-in {
-      from { transform: scale(0.3); opacity: 0; }
-      to   { transform: scale(1);   opacity: 1; }
-    }
+    /* ─── RESULT SCREEN ─── */
+    #result-screen { background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100dvh; padding: 40px 24px; }
+    .result-check { width: 88px; height: 88px; border-radius: 50%; background: var(--green-bg); border: 2px solid rgba(47,158,68,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+    @keyframes pop-in { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .result-check svg { width: 44px; height: 44px; }
-
-    .result-success-text {
-      font-size: 22px; font-weight: 700;
-      color: #40C057;
-      margin-bottom: 28px;
-      animation: fade-up 0.4s 0.15s both;
-    }
-
-    .result-photo {
-      width: 100px; height: 100px;
-      border-radius: 50%;
-      background: #1C1C1E;
-      border: 3px solid #2A2A2A;
-      overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px;
-      animation: fade-up 0.4s 0.2s both;
-    }
-
+    .result-success-text { font-size: 22px; font-weight: 700; color: #40C057; margin-bottom: 28px; animation: fade-up 0.4s 0.15s both; }
+    .result-photo { width: 100px; height: 100px; border-radius: 50%; background: #1C1C1E; border: 3px solid #2A2A2A; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; animation: fade-up 0.4s 0.2s both; }
+    .result-photo svg { width: 56px; height: 56px; fill: #444; }
+    .result-name { font-size: 18px; font-weight: 700; color: #748FFC; letter-spacing: 0.5px; margin-bottom: 24px; animation: fade-up 0.4s 0.25s both; }
+    .result-info { display: flex; flex-direction: column; align-items: center; gap: 6px; animation: fade-up 0.4s 0.3s both; margin-bottom: 40px; }
+    .result-meal { font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.9); }
+    .result-time, .result-date { font-size: 16px; color: rgba(255,255,255,0.5); font-family: var(--font-mono); }
+    .go-home-btn { width: 100%; max-width: 360px; background: #6B7CFF; color: white; border: none; border-radius: 50px; padding: 16px; font-size: 16px; font-weight: 700; font-family: var(--font); cursor: pointer; animation: fade-up 0.4s 0.4s both; transition: opacity 0.15s, transform 0.15s; -webkit-tap-highlight-color: transparent; }
+    .go-home-btn:active { opacity: 0.85; transform: scale(0.98); }
+    .rescan-btn { margin-top: 14px; background: none; border: 1.5px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); border-radius: 50px; padding: 12px; width: 100%; max-width: 360px; font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer; animation: fade-up 0.4s 0.45s both; transition: border-color 0.15s, color 0.15s; }
+    .rescan-btn:active { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.8); }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     .result-photo img {
         width: 100%;
         height: 100%;
         object-fit: contain;   /* KEY CHANGE */
     }
-    .result-photo svg { width: 56px; height: 56px; fill: #444; }
-
-    .result-name {
-      font-size: 18px; font-weight: 700;
-      color: #748FFC;
-      letter-spacing: 0.5px;
-      margin-bottom: 24px;
-      animation: fade-up 0.4s 0.25s both;
-    }
-
-    .result-info {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 6px;
-      animation: fade-up 0.4s 0.3s both;
-      margin-bottom: 40px;
-    }
-    .result-meal {
-      font-size: 20px; font-weight: 600;
-      color: rgba(255,255,255,0.9);
-    }
-    .result-time, .result-date {
-      font-size: 16px;
-      color: rgba(255,255,255,0.5);
-      font-family: var(--font-mono);
-    }
-
-    .go-home-btn {
-      width: 100%;
-      max-width: 360px;
-      background: #6B7CFF;
-      color: white;
-      border: none; border-radius: 50px;
-      padding: 16px;
-      font-size: 16px; font-weight: 700;
-      font-family: var(--font);
-      cursor: pointer;
-      animation: fade-up 0.4s 0.4s both;
-      transition: opacity 0.15s, transform 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .go-home-btn:active { opacity: 0.85; transform: scale(0.98); }
-
-    .rescan-btn {
-      margin-top: 14px;
-      background: none;
-      border: 1.5px solid rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.5);
-      border-radius: 50px;
-      padding: 12px;
-      width: 100%; max-width: 360px;
-      font-size: 14px; font-weight: 600;
-      font-family: var(--font);
-      cursor: pointer;
-      animation: fade-up 0.4s 0.45s both;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .rescan-btn:active { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.8); }
-
-    @keyframes fade-up {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Error toast */
-    .toast {
-      position: fixed;
-      bottom: 100px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #333;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-      z-index: 999;
-      white-space: nowrap;
-      max-width: 90%;
-      text-align: center;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    /* Toast */
+    .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: white; padding: 12px 20px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 999; white-space: nowrap; max-width: 90%; text-align: center; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -520,28 +171,21 @@
 
   <!-- ══════════════ HOME SCREEN ══════════════ -->
   <div id="home-screen" class="screen active">
-    <!-- Top bar -->
     <div class="top-bar">
       <div class="avatar">
-        <!-- Person silhouette -->
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       </div>
-      <div class="brand-logo">
-        <span>🌿</span>
-      </div>
+      <div class="brand-logo"><span>🌿</span></div>
     </div>
 
-    <!-- Greeting -->
     <div class="greeting">
       <h1>Good <span id="greeting-time">evening</span>, <span>Ritvij</span></h1>
       <p>No notifications need your attention</p>
     </div>
 
-    <!-- Alerts -->
     <div class="card alert-card">
       <div class="card-header">
         <div class="icon-circle red">
-          <!-- Warning triangle -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -552,11 +196,9 @@
       <div class="card-body">nothing to be worried about</div>
     </div>
 
-    <!-- Notifications -->
     <div class="card notif-card">
       <div class="card-header">
         <div class="icon-circle blue">
-          <!-- Bell icon -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B5BDB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -566,25 +208,19 @@
       </div>
     </div>
 
-    <!-- Quick Actions -->
     <div class="actions-row">
-      <!-- Scan QR -->
-      <button class="action-btn" id="scan-btn" onclick="openScanner()">
+      <button class="action-btn" onclick="openScanner('Breakfast','home')">
         <div class="action-icon">
           <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3" rx="0.5"/><rect x="14" y="7" width="3" height="3" rx="0.5"/><rect x="7" y="14" width="3" height="3" rx="0.5"/><path d="M14 14h1v1M14 17h3M17 14v3"/></svg>
         </div>
         <span class="action-label">Scan<br>QR</span>
       </button>
-
-      <!-- Room Cleaning -->
       <button class="action-btn">
         <div class="action-icon">
           <svg viewBox="0 0 24 24"><path d="M3 22l4-4m0 0l7-7M7 18l7-7m0 0l2-2a2.828 2.828 0 1 1 4 4l-2 2m-4-4l-3.5-3.5M15 9L9 15"/><circle cx="18" cy="6" r="2"/></svg>
         </div>
         <span class="action-label">Room<br>Cleaning</span>
       </button>
-
-      <!-- Mess Change -->
       <button class="action-btn">
         <div class="action-icon">
           <svg viewBox="0 0 24 24"><path d="M3 11l8-8 8 8M5 9v10a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9"/></svg>
@@ -593,24 +229,108 @@
       </button>
     </div>
 
-    <!-- In Mess Today -->
     <div class="mess-header">
       <h2>In Mess Today</h2>
       <a href="#">Go to Mess</a>
     </div>
-
-    <!-- Dynamic meal cards -->
     <div id="home-meals"></div>
 
-    <!-- Bottom nav -->
     <div class="bottom-nav">
-      <button class="nav-item active">
-        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <button class="nav-item active" onclick="switchTab('home')">
+        <svg class="fill-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Home</span>
       </button>
-      <button class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M3 11l8-8 8 8M5 9v10a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9"/><line x1="12" y1="2" x2="12" y2="7"/></svg>
+      <button class="nav-item" onclick="switchTab('mess')">
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/>
+          <path d="M8 12h8M12 8v8"/>
+        </svg>
         <span>Mess</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('gala')">
+        <!-- party popper icon -->
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M5.8 11.3L2 22l10.7-3.79M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/>
+          <path d="M22 2l-7 7M16 8l-2-2"/>
+          <path d="M17 17l2 2M17 21l2-2M21 17l-2 2M21 21l-2-2"/>
+        </svg>
+        <span>Gala Dinner</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════ GALA DINNER SCREEN ══════════════ -->
+  <div id="gala-screen" class="screen">
+    <div class="gala-header">
+      <h1>Gala Dinner</h1>
+    </div>
+
+    <div class="gala-categories">
+
+      <!-- Starters -->
+      <button class="gala-cat-btn" onclick="openScanner('Starters','gala')">
+        <div class="gala-cat-icon">
+          <!-- ladle / soup spoon -->
+          <svg viewBox="0 0 24 24">
+            <path d="M5 11c0-3.87 3.13-7 7-7s7 3.13 7 7c0 3.12-2.03 5.77-4.84 6.71L14 21H10l.84-3.29C8.03 16.77 6 14.12 6 11z"/>
+            <line x1="12" y1="4" x2="12" y2="2"/>
+          </svg>
+        </div>
+        <span class="gala-cat-label">Starters</span>
+      </button>
+
+      <!-- Main Course -->
+      <button class="gala-cat-btn" onclick="openScanner('Main Course','gala')">
+        <div class="gala-cat-icon">
+          <!-- fork and knife -->
+          <svg viewBox="0 0 24 24">
+            <line x1="8" y1="2" x2="8" y2="12"/>
+            <path d="M5 2v4a3 3 0 0 0 6 0V2"/>
+            <line x1="8" y1="12" x2="8" y2="22"/>
+            <line x1="16" y1="2" x2="16" y2="22"/>
+          </svg>
+        </div>
+        <span class="gala-cat-label">Main Course</span>
+      </button>
+
+      <!-- Desserts -->
+      <button class="gala-cat-btn" onclick="openScanner('Desserts','gala')">
+        <div class="gala-cat-icon">
+          <!-- cake with candle -->
+          <svg viewBox="0 0 24 24">
+            <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
+            <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2 1 2 1"/>
+            <line x1="2" y1="21" x2="22" y2="21"/>
+            <path d="M7 8v2M12 8v2M17 8v2"/>
+            <path d="M12 4a1 1 0 0 0 1-1V2a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1z"/>
+          </svg>
+        </div>
+        <span class="gala-cat-label">Desserts</span>
+      </button>
+    </div>
+
+    <div class="gala-info-box">No upcoming Gala Dinner scheduled.</div>
+
+    <!-- Same nav, Gala Dinner active -->
+    <div class="bottom-nav">
+      <button class="nav-item" onclick="switchTab('home')">
+        <svg class="fill-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('mess')">
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/>
+          <path d="M8 12h8M12 8v8"/>
+        </svg>
+        <span>Mess</span>
+      </button>
+      <button class="nav-item active" onclick="switchTab('gala')">
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M5.8 11.3L2 22l10.7-3.79M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/>
+          <path d="M22 2l-7 7M16 8l-2-2"/>
+          <path d="M17 17l2 2M17 21l2-2M21 17l-2 2M21 21l-2-2"/>
+        </svg>
+        <span>Gala Dinner</span>
       </button>
     </div>
   </div>
@@ -621,13 +341,11 @@
       <button class="back-btn" onclick="closeScanner()">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="scanner-title">Scan QR Code</span>
+      <span class="scanner-title" id="scanner-title">Scan QR Code</span>
     </div>
 
-    <!-- QR reader will mount here -->
     <div id="qr-reader"></div>
 
-    <!-- Shown when camera not available -->
     <div class="camera-placeholder" id="camera-placeholder" style="display:none">
       <div class="scan-frame"><span></span></div>
       <p>Camera access was denied or is unavailable.<br>Tap below to simulate a scan.</p>
@@ -648,7 +366,7 @@
     <div class="result-success-text">Scan Successful!</div>
 
     <div class="result-photo">
-      <img src="your_photo.png" alt="User Photo">
+      <img src="your_photo.png" />
     </div>
 
     <div class="result-name">RITVIJ GOPAL</div>
@@ -660,27 +378,35 @@
     </div>
 
     <button class="go-home-btn" onclick="goHome()">Go Home</button>
-    <button class="rescan-btn" onclick="openScanner()">↩ Scan Again</button>
+    <button class="rescan-btn" id="rescan-btn">↩ Scan Again</button>
   </div>
 
 </div>
 
-<!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
 <script>
-/* ─── State ─── */
-let html5QrCode = null;
+/* ─── App State ─── */
+let html5QrCode    = null;
 let scannerRunning = false;
+let currentLabel   = '';    // what to show on result screen
+let scannerOrigin  = 'home';// screen to return to on back
 
-/* ─── Screen Navigation ─── */
+/* ── Screen navigation ── */
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active', 'exit-left');
-  });
-  const target = document.getElementById(id);
-  // small delay so browser registers class removal
-  requestAnimationFrame(() => target.classList.add('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  requestAnimationFrame(() => document.getElementById(id).classList.add('active'));
+}
+
+/* ── Tab switching ── */
+function switchTab(tab) {
+  stopScanner();
+  if (tab === 'gala') {
+    showScreen('gala-screen');
+  } else {
+    // 'home' and 'mess' both show home for now
+    showScreen('home-screen');
+  }
 }
 
 function goHome() {
@@ -688,7 +414,7 @@ function goHome() {
   showScreen('home-screen');
 }
 
-/* ─── Greeting time ─── */
+/* ── Greeting ── */
 function updateGreeting() {
   const h = new Date().getHours();
   const el = document.getElementById('greeting-time');
@@ -697,111 +423,78 @@ function updateGreeting() {
   else el.textContent = 'evening';
 }
 
-/* ─── Meal Logic ─── */
+/* ── Meal data ── */
 const MEALS = [
-  { name: 'Breakfast', start: 7,  end: 11, time: '07:00 - 11:00',
-    dishes: ['POHA / UPMA', 'BOILED EGGS', 'BREAD & BUTTER', 'TEA / COFFEE'] },
-  { name: 'Lunch',     start: 12, end: 15, time: '12:00 - 15:00',
-    dishes: ['DAL FRY', 'PANEER BUTTER MASALA', 'STEAMED RICE', 'CHAPATI', 'SALAD'] },
-  { name: 'Dinner',    start: 19, end: 23, time: '19:30 - 21:30',
-    dishes: ['KADHAI CHICKEN', 'KADHAI PANEER', 'DAL MAKHNI', 'STEAMED RICE', 'CHAPATI'] },
+  { name:'Breakfast', start:7,  end:11, time:'07:00 - 11:00', dishes:['POHA / UPMA','BOILED EGGS','BREAD & BUTTER','TEA / COFFEE'] },
+  { name:'Lunch',     start:12, end:15, time:'12:00 - 15:00', dishes:['DAL FRY','PANEER BUTTER MASALA','STEAMED RICE','CHAPATI','SALAD'] },
+  { name:'Dinner',    start:19, end:23, time:'19:30 - 21:30', dishes:['KADHAI CHICKEN','KADHAI PANEER','DAL MAKHNI','STEAMED RICE','CHAPATI'] },
 ];
-
-function getMealForHour(h) {
-  return MEALS.find(m => h >= m.start && h < m.end) || null;
-}
+function getMealForHour(h) { return MEALS.find(m => h >= m.start && h < m.end) || null; }
 
 function renderHomeMeals() {
-  const container = document.getElementById('home-meals');
   const h = new Date().getHours();
-  const current = getMealForHour(h);
+  const current  = getMealForHour(h);
   const upcoming = MEALS.filter(m => m.start > h);
-
   let html = '';
-
   if (current) {
-    html += `
-      <div class="meal-card">
-        <div class="meal-title-row">
-          <div><span class="meal-name">${current.name}</span><span class="meal-badge">Ongoing</span></div>
-          <span class="meal-time">${current.time}</span>
-        </div>
-        <div class="dish-label">DISH</div>
-        ${current.dishes.map(d => `<div class="dish-item">${d}</div>`).join('')}
-      </div>`;
+    html += `<div class="meal-card"><div class="meal-title-row"><div><span class="meal-name">${current.name}</span><span class="meal-badge">Ongoing</span></div><span class="meal-time">${current.time}</span></div><div class="dish-label">DISH</div>${current.dishes.map(d=>`<div class="dish-item">${d}</div>`).join('')}</div>`;
   }
-
   upcoming.forEach(m => {
-    html += `
-      <div class="meal-card">
-        <div class="meal-title-row">
-          <div><span class="meal-name">${m.name}</span></div>
-          <span class="meal-time">${m.time}</span>
-        </div>
-        <div class="dish-label">DISH</div>
-        ${m.dishes.map(d => `<div class="dish-item">${d}</div>`).join('')}
-      </div>`;
+    html += `<div class="meal-card"><div class="meal-title-row"><div><span class="meal-name">${m.name}</span></div><span class="meal-time">${m.time}</span></div><div class="dish-label">DISH</div>${m.dishes.map(d=>`<div class="dish-item">${d}</div>`).join('')}</div>`;
   });
-
-  if (!current && upcoming.length === 0) {
+  if (!current && !upcoming.length) {
     html = `<div class="meal-card" style="text-align:center;color:#ADB5BD;padding:24px">No meals available right now</div>`;
   }
-
-  container.innerHTML = html;
+  document.getElementById('home-meals').innerHTML = html;
 }
 
-/* ─── Result Screen ─── */
-function fillResult() {
+/* ── Fill result screen ── */
+function fillResult(label) {
   const now = new Date();
-  const h = now.getHours(), m = now.getMinutes();
-
-  // Format time HH:MM
-  const hh = String(h).padStart(2, '0');
-  const mm = String(m).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
   document.getElementById('result-time').textContent = `${hh}:${mm}`;
 
-  // Format date: DD Mon YYYY
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dd = String(now.getDate()).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2,'0');
   document.getElementById('result-date').textContent = `${dd} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
-  // Meal
-  const meal = getMealForHour(h);
-  document.getElementById('result-meal').textContent = meal ? meal.name : 'No meal available';
+  // Use explicit label if given; otherwise fall back to time-based meal name
+  if (label) {
+    document.getElementById('result-meal').textContent = label;
+  } else {
+    const meal = getMealForHour(now.getHours());
+    document.getElementById('result-meal').textContent = meal ? meal.name : 'No meal available';
+  }
 }
 
-/* ─── Scanner ─── */
-function openScanner() {
+/* ── Scanner ── */
+/**
+ * @param {string} label   - text shown on success (e.g. 'Starters', 'Main Course', 'Desserts', 'Breakfast')
+ * @param {string} origin  - screen to return to: 'home' | 'gala'
+ */
+function openScanner(label, origin) {
+  currentLabel  = label  || '';
+  scannerOrigin = origin || 'home';
+
   stopScanner();
-  showScreen('scanner-screen');
+  document.getElementById('qr-reader').innerHTML = '';
+  document.getElementById('scanner-title').textContent = label ? `Scan for ${label}` : 'Scan QR Code';
   document.getElementById('scanner-hint').style.display = 'block';
   document.getElementById('camera-placeholder').style.display = 'none';
+  showScreen('scanner-screen');
 
   html5QrCode = new Html5Qrcode("qr-reader");
 
-  Html5Qrcode.getCameras().then(cameras => {
-    if (!cameras || cameras.length === 0) {
-      showCameraFallback('No camera found on this device.');
-      return;
-    }
-
-    // prefer back camera
-    const cam = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
-
-    html5QrCode.start(
-      cam.id,
-      { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 },
-      onScanSuccess,
-      () => {} // ignore per-frame errors
-    ).then(() => {
-      scannerRunning = true;
-    }).catch(err => {
-      showCameraFallback('Could not start camera: ' + err);
-    });
-
-  }).catch(err => {
-    showCameraFallback('Camera permission denied. ' + err);
-  });
+  Html5Qrcode.getCameras()
+    .then(cameras => {
+      if (!cameras || cameras.length === 0) { showCameraFallback('No camera found.'); return; }
+      const cam = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
+      html5QrCode.start(cam.id, { fps:10, qrbox:{ width:240, height:240 }, aspectRatio:1.0 }, onScanSuccess, () => {})
+        .then(() => { scannerRunning = true; })
+        .catch(err => showCameraFallback('Could not start camera: ' + err));
+    })
+    .catch(err => showCameraFallback('Camera permission denied. ' + err));
 }
 
 function showCameraFallback(msg) {
@@ -821,17 +514,18 @@ function stopScanner() {
 
 function closeScanner() {
   stopScanner();
-  showScreen('home-screen');
+  showScreen(scannerOrigin === 'gala' ? 'gala-screen' : 'home-screen');
 }
 
-function onScanSuccess(decodedText) {
-  /* Regardless of content — go to result screen */
+function onScanSuccess() {
   stopScanner();
-  fillResult();
+  fillResult(currentLabel);
+  // Wire "Scan Again" to re-open scanner with same context
+  document.getElementById('rescan-btn').onclick = () => openScanner(currentLabel, scannerOrigin);
   showScreen('result-screen');
 }
 
-/* ─── Toast ─── */
+/* ── Toast ── */
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -839,7 +533,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-/* ─── Init ─── */
+/* ── Init ── */
 updateGreeting();
 renderHomeMeals();
 </script>
